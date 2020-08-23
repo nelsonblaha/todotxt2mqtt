@@ -1,5 +1,7 @@
 # TodoTxt2Mqtt
 
+Suitable for using a [todo.txt](https://github.com/todotxt/todo.txt) file with Home Assistant or any other MQTT-compatible software
+
 ## Docker
 - On production machine
     - make a conf/private.conf
