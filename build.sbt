@@ -1,6 +1,10 @@
 name := """todotxt2mqtt"""
 organization := "blaha"
 
+javaOptions in Universal ++= Seq(
+  "-Dpidfile.path=/dev/null"
+)
+
 version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
