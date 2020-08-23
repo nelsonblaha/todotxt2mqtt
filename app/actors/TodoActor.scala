@@ -18,7 +18,7 @@ class TodoActor @Inject() (config: Config) extends Actor with ActorLogging {
   implicit val actorSystem: ActorSystem = ActorSystem()
 
   var mqttActor: ActorRef = null
-  val todoFile = config.getString("todo.root") + "/todo.txt"
+  val todoFile = config.getString("todo.root")
   var lines = List.empty[String]
 
   def readTodo: Unit = {
