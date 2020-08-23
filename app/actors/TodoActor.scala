@@ -17,7 +17,7 @@ class TodoActor extends Actor with ActorLogging {
   implicit val actorSystem: ActorSystem = ActorSystem()
 
   var mqttActor: ActorRef = null
-  val todoFile = "/home/ben/src/todotxt2mqtt/todo.txt"
+  val todoFile = "/todo/todo.txt"
   var lines = List.empty[String]
 
   def readTodo: Unit = {
