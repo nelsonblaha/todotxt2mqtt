@@ -10,14 +10,15 @@ import akka.actor._
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import com.typesafe.config.Config
+import javax.inject.Inject
 
 import scala.concurrent.Future
 
-class TodoActor extends Actor with ActorLogging {
+class TodoActor @Inject() (config: Config) extends Actor with ActorLogging {
   implicit val actorSystem: ActorSystem = ActorSystem()
 
   var mqttActor: ActorRef = null
-  val todoFile = "/todo/todo.txt"
+  val todoFile = config.getString("todo.root") + "/todo.txt"
   var lines = List.empty[String]
 
   def readTodo: Unit = {
