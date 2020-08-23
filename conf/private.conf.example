@@ -1,0 +1,5 @@
+play.http.secret.key="whatever"
+mqtt.host="tcp://localhost:1883"
+mqtt.user="your_mqtt_broker_username"
+mqtt.pass="your_mqtt_broker_password"
+todo.root="/home/nelsonblaha/src/todotxt2mqtt/todo/"
