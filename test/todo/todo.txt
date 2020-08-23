@@ -1,4 +1,4 @@
 
-(B) bar
 (A) foo @home
-(D) foo
+(B) bar
+(B) bar

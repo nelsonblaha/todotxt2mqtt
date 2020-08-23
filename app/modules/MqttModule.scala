@@ -1,17 +1,14 @@
 package modules
 
 import actors.{MqttActor, TodoActor}
-import actors.MqttActor.Publish
-import actors.TodoActor.{Add, TodoItem}
 import javax.inject._
 import play.api.libs.concurrent.AkkaGuiceSupport
-import play.libs.Akka
 import akka.actor.{ActorRef, ActorSystem}
-import akka.util.ByteString
 
 import scala.concurrent.duration._
-import play.Application
 import com.google.inject.AbstractModule
+import com.typesafe.config.Config
+import play.api.{Configuration, Environment}
 
 @Singleton
 class MqttModuleStarter @Inject()(system: ActorSystem,
@@ -23,10 +20,15 @@ class MqttModuleStarter @Inject()(system: ActorSystem,
   system.scheduler.scheduleOnce(1.seconds, todoActor, mqttActor)
 }
 
-class MqttModule extends AbstractModule with AkkaGuiceSupport {
+class MqttModule @Inject()(environment: Environment, configuration: Configuration) extends AbstractModule with AkkaGuiceSupport {
+  val config = configuration.underlying
   override def configure() = {
-    bindActor[MqttActor]("MqttActor")
-    bindActor[TodoActor]("TodoActor")
+    val mqttProps = MqttActor.props(config.getString("mqtt.host"), config.getString("mqtt.user"), config.getString("mqtt.pass"))
+    bindActor[MqttActor]("MqttActor", _ => mqttProps)
+
+    val todoProps = TodoActor.props(config.getString("todo.root"), None)
+    bindActor[TodoActor]("TodoActor", _ => todoProps)
+
     bind(classOf[MqttModuleStarter]).asEagerSingleton
   }
 }

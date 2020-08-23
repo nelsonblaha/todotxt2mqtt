@@ -1,0 +1,4 @@
+
+(D) add/remove context-based items as user is enters/leaves that context @115
+(A) foobarmqtt @context @115
+(B) foobarmqtt @context @115
