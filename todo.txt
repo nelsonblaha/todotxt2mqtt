@@ -1,0 +1,5 @@
+(A) add items from HA as they are detected
+(B) deploy
+(C) items that need to be done a certain duration after they were last done
+(D) add/remove context-based items as user is enters/leaves that context
+(E) shared items like "get the mail"... remove from all users when it's done
