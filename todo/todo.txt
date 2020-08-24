@@ -1,4 +1,3 @@
-
-(B) bar
-(A) foo @home
-(D) foo
+(A) context test @context
+(B) foo @home
+(C) bar
