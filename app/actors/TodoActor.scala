@@ -9,6 +9,7 @@ import actors.TodoActor.ListGet
 class TodoActor(todoRoot: String, testLines: Option[List[String]] = None) extends Actor with ActorLogging {
   implicit val actorSystem: ActorSystem = ActorSystem()
 
+  val test: Boolean = testLines.nonEmpty
   var mqttActor: ActorRef = null
   val todoFile = todoRoot + "/todo.txt"
   val hiddenFile = todoRoot + "/hidden.txt"
@@ -28,23 +29,30 @@ class TodoActor(todoRoot: String, testLines: Option[List[String]] = None) extend
 
     case ShowContext(context: String) =>
       readTodo
+
       val hidden = testLines.map { _ =>
+        // use in-memory hidden files if in test mode
         hidden4tests
       } getOrElse {
-        val source = scala.io.Source.fromFile(hiddenFile)
-        val hiddenItems = source.getLines.toList.map(TodoItem(_))
-        source.close
-        hiddenItems
+        readList(hiddenFile)
       }
 
       new File(hiddenFile).delete
+      var filteredHidden = List.empty[TodoItem]
 
-      hidden.map {
-        case line if line.contexts.contains(context) =>
-          if(testLines.isEmpty) add(todo, line, todoFile)
-          todo = (todo :+ line).reverse
-        case line if !line.contexts.contains(context) =>
-          if(testLines.isEmpty) add(readList(hiddenFile), line, hiddenFile)
+      hidden.foreach { line =>
+        if(line.contexts.contains(context)) {
+          todo = (todo :+ line)
+        } else {
+          filteredHidden = filteredHidden :+ line
+        }
+      }
+
+      if(test) {
+        hidden4tests = filteredHidden
+      } else {
+        write(todoFile, printList(todo))
+        write(hiddenFile, printList(filteredHidden))
       }
 
     case HideContext(context: String) =>
@@ -52,48 +60,57 @@ class TodoActor(todoRoot: String, testLines: Option[List[String]] = None) extend
 
       new File(todoFile).delete
 
-      var newTodo4Tests = List.empty[TodoItem]
+      var filteredTodo = List.empty[TodoItem]
+      var updatedHidden = List.empty[TodoItem]
 
-      todo.foreach {
-        case line if !line.contexts.contains(context) =>
-          if(testLines.isEmpty) add(todo, line, todoFile) else {
-            newTodo4Tests = newTodo4Tests :+ line
-          }
-          todo = todo :+ line
-        case line if line.contexts.contains(context) =>
-          if(testLines.nonEmpty) {
-            hidden4tests = hidden4tests :+ line
-          } else {
-            add(readList(hiddenFile), line, hiddenFile)
-          }
+      todo.foreach { line =>
+        if(line.contexts.contains(context)) {
+          updatedHidden = updatedHidden :+ line
+        } else {
+          filteredTodo = filteredTodo :+ line
+        }
       }
 
-      if(newTodo4Tests.nonEmpty) {
-        todo = newTodo4Tests
+      todo = filteredTodo
+      hidden4tests = updatedHidden
+
+      if(!test) {
+        if(todo.isEmpty) {
+          write(todoFile, "")
+        } else {
+          write(todoFile, printList(todo))
+        }
+
+        if(updatedHidden.isEmpty) {
+          write(hiddenFile, "")
+        } else {
+          write(hiddenFile, printList(updatedHidden ++ readList(hiddenFile)))
+        }
       }
   }
 
   def readList(path: String): List[TodoItem] = {
-    testLines map { lines =>
-      lines.map(TodoItem(_))
-    } getOrElse {
-      val source = scala.io.Source.fromFile(path)
-      val lines = source.getLines.toList.reverse.filterNot(_.isEmpty).map { l =>
-        TodoItem(l)
-      }
-      source.close
-      lines
+    testLines match {
+      case Some(lines: List[String]) if todo.isEmpty => lines.map(TodoItem(_))
+      case _ =>
+        val source = scala.io.Source.fromFile(path)
+        val lines = source.getLines.toList.reverse.filterNot(_.isEmpty).map { l =>
+          TodoItem(l)
+        }
+        source.close
+        lines
     }
   }
 
   def readTodo: Unit = {
-    if(todo.isEmpty) todo = readList(todoFile)
+    if(todo.isEmpty) {
+      todo = readList(todoFile)
+    }
   }
 
   def printList(items: List[TodoItem]): String = items.sortBy(_.raw).map(_.toLine).mkString("", "\n", "")
 
   def add(list: List[TodoItem], item: TodoItem, path: String = todoFile) = {
-    readTodo
     write(path, printList(list :+ item))
   }
 
