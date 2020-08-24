@@ -1,7 +1,7 @@
 package controllers
 
 import actors.TodoActor
-import actors.TodoActor.{HideContext, ListGet, ShowContext}
+import actors.TodoActor.{Add, HideContext, ListGet, ShowContext, TodoItem}
 import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -27,7 +27,7 @@ class TodoActorSpec extends TestKit(ActorSystem("TodoActorSpec")) with AnyWordSp
   "Loading todo list" should {
     val (messageProbe, todoActor) = setup
 
-    "Write the list back" in {
+    "write the list back" in {
       todoActor.tell(ListGet, messageProbe.ref)
 
       messageProbe.fishForSpecificMessage(1 second) {
@@ -36,11 +36,25 @@ class TodoActorSpec extends TestKit(ActorSystem("TodoActorSpec")) with AnyWordSp
     }
   }
 
+  "Adding todo item" should {
+    val (messageProbe, todoActor) = setup
+
+    todoActor.tell(Add(TodoItem("(D) added")), messageProbe.ref)
+
+    "add the item" in {
+      todoActor.tell(ListGet, messageProbe.ref)
+
+      messageProbe.fishForSpecificMessage(1 second) {
+        case string if string == (testTodoLines :+ "(D) added").mkString("\n") => true
+      }
+    }
+  }
+
   "Changing contexts" should {
 
     val (messageProbe, todoActor) = setup
 
-    "Hide context" in {
+    "hide context" in {
       todoActor ! HideContext("home")
       todoActor.tell(ListGet, messageProbe.ref)
       messageProbe.fishForSpecificMessage(1 seconds) {
@@ -48,7 +62,7 @@ class TodoActorSpec extends TestKit(ActorSystem("TodoActorSpec")) with AnyWordSp
       }
     }
 
-    "Show context" in {
+    "show context" in {
       todoActor ! ShowContext("home")
       todoActor.tell(ListGet, messageProbe.ref)
       messageProbe.fishForSpecificMessage(1 seconds) {

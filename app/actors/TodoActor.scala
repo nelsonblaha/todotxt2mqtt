@@ -21,7 +21,12 @@ class TodoActor(todoRoot: String, testLines: Option[List[String]] = None) extend
   def receive = {
     case mqtt: ActorRef => mqttActor = mqtt
 
-    case Add(item) => add(todo, item)
+    case Add(item) =>
+      readTodo
+      todo = todo :+ item
+      if(!test) {
+        write(todoFile, printList(todo))
+      }
 
     case ListGet =>
       readTodo
@@ -109,10 +114,6 @@ class TodoActor(todoRoot: String, testLines: Option[List[String]] = None) extend
   }
 
   def printList(items: List[TodoItem]): String = items.sortBy(_.raw).map(_.toLine).mkString("", "\n", "")
-
-  def add(list: List[TodoItem], item: TodoItem, path: String = todoFile) = {
-    write(path, printList(list :+ item))
-  }
 
   def write(path: String = todoFile, print: String = printList(todo)): Unit = {
     new File(path).delete
